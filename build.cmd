@@ -10,3 +10,4 @@ if %__generate%==1 (
 )
 
 cmake --build "%~dp0/obj" --target install
+dotnet build ./src/managed

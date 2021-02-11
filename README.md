@@ -1,6 +1,6 @@
 # jni-playground
 
-Simple C console application that loads the JVM
+Simple console application that loads the JVM
 
 ## Requirements
 
@@ -12,4 +12,6 @@ Simple C console application that loads the JVM
 - Set `JAVA_HOME` to JDK install path
 - Update `PATH`/`LD_LIBRARY_PATH` with path to JVM (e.g. `<JAVA_HOME>/jre/bin/server`)
 - Run the build script (`build.cmd`/`build.sh`) at the root of the repo
-- Executable will be at `bin/nativehost`
+- Run one of the hosts:
+    - Native: `bin/nativehost`
+    - .NET: `bin/DotNetHost`
