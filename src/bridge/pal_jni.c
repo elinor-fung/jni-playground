@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 #include "pal_jni.h"
+#include <string.h>
 
 JavaVM* gJvm;
 
@@ -151,7 +152,7 @@ bool CheckJNIExceptions(JNIEnv* env)
 {
     if ((*env)->ExceptionCheck(env))
     {
-        (*env)->ExceptionDescribe(env); 
+        (*env)->ExceptionDescribe(env);
         (*env)->ExceptionClear(env);
         return true;
     }
@@ -203,7 +204,6 @@ JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *vm, void *reserved)
 {
     (void)reserved;
-    LOG_INFO("JNI_OnLoad in pal_jni.c");
     gJvm = vm;
 
     JNIEnv* env = GetJNIEnv();

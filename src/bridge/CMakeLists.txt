@@ -1,16 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 project(bridge C)
 
-#set(CMAKE_C_STANDARD 99)
-
-find_package(JNI REQUIRED)
-
-if(WIN32)
-  add_compile_definitions(TARGET_WINDOWS)
-else(WIN32)
-  add_compile_definitions(TARGET_UNIX)
-endif(WIN32)
-
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${JNI_INCLUDE_DIRS}
