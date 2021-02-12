@@ -15,6 +15,14 @@
 
 extern JavaVM* gJvm;
 
+// java/io/ByteArrayInputStream
+extern jclass    g_ByteArrayInputStreamClass;
+extern jmethodID g_ByteArrayInputStreamCtor;
+
+// java/security/Key
+extern jclass    g_KeyClass;
+extern jmethodID g_KeyGetEncoded;
+
 // java/security/SecureRandom
 extern jclass    g_randClass;
 extern jmethodID g_randCtor;
@@ -73,6 +81,33 @@ extern jmethodID g_sslCtxGetDefaultSslParamsMethod;
 extern jclass    g_GCMParameterSpecClass;
 extern jmethodID g_GCMParameterSpecCtor;
 
+// java/security/cert/CertificateFactory
+extern jclass    g_CertFactoryClass;
+extern jmethodID g_CertFactoryGetInstance;
+extern jmethodID g_CertFactoryGenerateCertificate;
+extern jmethodID g_CertFactoryGenerateCRL;
+
+// java/security/cert/X509Certificate
+extern jclass    g_X509CertClass;
+extern jmethodID g_X509CertGetEncoded;
+extern jmethodID g_X509CertGetIssuerX500Principal;
+extern jmethodID g_X509CertGetNotAfter;
+extern jmethodID g_X509CertGetNotBefore;
+extern jmethodID g_X509CertGetPublicKey;
+extern jmethodID g_X509CertGetSerialNumber;
+extern jmethodID g_X509CertGetSigAlgOID;
+extern jmethodID g_X509CertGetSubjectX500Principal;
+extern jmethodID g_X509CertGetVersion;
+
+// java/security/cert/X509Certificate implements java/security/cert/X509Extension
+extern jmethodID g_X509CertGetCriticalExtensionOIDs;
+extern jmethodID g_X509CertGetExtensionValue;
+extern jmethodID g_X509CertGetNonCriticalExtensionOIDs;
+
+// java/security/cert/X509CRL
+extern jclass    g_X509CRLClass;
+extern jmethodID g_X509CRLGetNextUpdate;
+
 // java/security/interfaces/RSAKey
 extern jclass    g_RSAKeyClass;
 extern jmethodID g_RSAKeyGetModulus;
@@ -121,6 +156,15 @@ extern jmethodID g_KeyFactoryGenPublicMethod;
 extern jclass    g_X509EncodedKeySpecClass;
 extern jmethodID g_X509EncodedKeySpecCtor;
 
+// java/util/Date
+extern jclass    g_DateClass;
+extern jmethodID g_DateGetTime;
+
+// javax/security/auth/x500/X500Principal
+extern jclass    g_X500PrincipalClass;
+extern jmethodID g_X500PrincipalGetEncoded;
+extern jmethodID g_X500PrincipalHashCode;
+
 // com/android/org/conscrypt/NativeCrypto
 extern jclass    g_NativeCryptoClass;
 
@@ -136,6 +180,7 @@ jobject ToGRef(JNIEnv *env, jobject lref);
 jobject AddGRef(JNIEnv *env, jobject gref);
 void ReleaseGRef(JNIEnv *env, jobject gref);
 jclass GetClassGRef(JNIEnv *env, const char* name);
+bool CheckJNIExceptions(JNIEnv *env);
 jmethodID GetMethod(JNIEnv *env, bool isStatic, jclass klass, const char* name, const char* sig);
 jfieldID GetField(JNIEnv *env, bool isStatic, jclass klass, const char* name, const char* sig);
 JNIEnv* GetJNIEnv(void);

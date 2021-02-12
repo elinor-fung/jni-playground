@@ -6,9 +6,16 @@ include_directories(
     ${JNI_INCLUDE_DIRS}
 )
 
+set(HEADERS
+    bridge.h
+    pal_jni.h
+    pal_x509.h
+)
+
 set(SOURCES
     bridge.c
     pal_jni.c
+    pal_x509.c
 )
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
