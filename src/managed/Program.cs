@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace DotNetHost
 {
-    class bridge
+    internal static class bridge
     {
         [DllImport(nameof(bridge), CallingConvention = CallingConvention.Cdecl)]
         public static extern byte create_jvm();
@@ -23,6 +23,9 @@ namespace DotNetHost
             try
             {
                 bridge.print_version();
+                Console.WriteLine();
+
+                X509Test.Run();
             }
             finally
             {
