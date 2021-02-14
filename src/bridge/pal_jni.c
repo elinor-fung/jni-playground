@@ -152,6 +152,15 @@ jmethodID g_X509EncodedKeySpecCtor;
 jclass    g_DateClass;
 jmethodID g_DateGetTime;
 
+// java/util/Iterator
+jclass    g_IteratorClass;
+jmethodID g_IteratorHasNext;
+jmethodID g_IteratorNext;
+
+// java/util/Set
+jclass    g_SetClass;
+jmethodID g_SetIterator;
+
 // javax/security/auth/x500/X500Principal
 jclass    g_X500PrincipalClass;
 jmethodID g_X500PrincipalGetEncoded;
@@ -371,8 +380,15 @@ JNI_OnLoad(JavaVM *vm, void *reserved)
     g_X509EncodedKeySpecClass       = GetClassGRef(env, "java/security/spec/X509EncodedKeySpec");
     g_X509EncodedKeySpecCtor        = GetMethod(env, false, g_X509EncodedKeySpecClass, "<init>", "([B)V");
 
-    g_DateClass     = GetClassGRef(env, "java/util/Date");
-    g_DateGetTime   = GetMethod(env, false, g_DateClass, "getTime", "()J");
+    g_DateClass =   GetClassGRef(env, "java/util/Date");
+    g_DateGetTime = GetMethod(env, false, g_DateClass, "getTime", "()J");
+
+    g_IteratorClass =   GetClassGRef(env, "java/util/Iterator");
+    g_IteratorHasNext = GetMethod(env, false, g_IteratorClass, "hasNext", "()Z");
+    g_IteratorNext =    GetMethod(env, false, g_IteratorClass, "next", "()Ljava/lang/Object;");
+
+    g_SetClass =    GetClassGRef(env, "java/util/Set");
+    g_SetIterator = GetMethod(env, false, g_SetClass, "iterator", "()Ljava/util/Iterator;");
 
     g_X500PrincipalClass =      GetClassGRef(env, "javax/security/auth/x500/X500Principal");
     g_X500PrincipalGetEncoded = GetMethod(env, false, g_X500PrincipalClass, "getEncoded", "()[B");

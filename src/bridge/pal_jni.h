@@ -161,6 +161,15 @@ extern jmethodID g_X509EncodedKeySpecCtor;
 extern jclass    g_DateClass;
 extern jmethodID g_DateGetTime;
 
+// java/util/Iterator
+extern jclass    g_IteratorClass;
+extern jmethodID g_IteratorHasNext;
+extern jmethodID g_IteratorNext;
+
+// java/util/Set
+extern jclass    g_SetClass;
+extern jmethodID g_SetIterator;
+
 // javax/security/auth/x500/X500Principal
 extern jclass    g_X500PrincipalClass;
 extern jmethodID g_X500PrincipalGetEncoded;

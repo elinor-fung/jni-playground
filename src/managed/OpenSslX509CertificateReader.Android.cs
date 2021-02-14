@@ -242,7 +242,9 @@ namespace Internal.Cryptography.Pal
             string oidStr = Encoding.UTF8.GetString(oid, oidLen);
             byte[] rawData = new ReadOnlySpan<byte>(data, dataLen).ToArray();
             bool critical = isCritical != 0;
-            callbackContext.Results.Add(new X509Extension(new Oid(oidStr), rawData, critical));
+
+            // The data array is the full DER-encoded data. X509Extension expects the data without the type and length, so skip the first two bytes.
+            callbackContext.Results.Add(new X509Extension(new Oid(oidStr), rawData[2..], critical));
         }
 
         public IEnumerable<X509Extension> Extensions

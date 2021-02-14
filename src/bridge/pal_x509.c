@@ -276,9 +276,75 @@ uint64_t CryptoNative_X509IssuerNameHash(jobject /*X509Certificate*/ cert)
 
 int32_t AndroidCryptoNative_X509EnumExtensions(jobject /*X509Certificate*/ cert, EnumX509ExtensionsCallback cb, void *context)
 {
+    if (cert == NULL)
+        return 0;
+
+    JNIEnv *env = GetJNIEnv();
+
     // Set<string> crit = cert.getCriticalExtensionOIDs();
+    // Iterator<string> iter = collection.iterator();
+    // while (iter.hasNext()) {
+    //     string oid = iter.next();
+    //     byte[] data = cert.getExtensionValue(oid);
+    //     cb(oid, oid.length, data, data.length, /*critical*/ true);
+    // }
+    {
+        jobject crit = (*env)->CallObjectMethod(env, cert, g_X509CertGetCriticalExtensionOIDs);
+        jobject critIter = (*env)->CallObjectMethod(env, crit, g_SetIterator);
+        jboolean hasNext = (*env)->CallBooleanMethod(env, critIter, g_IteratorHasNext);
+        while (hasNext)
+        {
+            jstring oid = (*env)->CallObjectMethod(env, critIter, g_IteratorNext);
+            jsize oidLen = (*env)->GetStringUTFLength(env, oid);
+            const char *oidPtr = (*env)->GetStringUTFChars(env, oid, NULL);
+
+            jbyteArray data = (*env)->CallObjectMethod(env, cert, g_X509CertGetExtensionValue, oid);
+            jsize dataLen = (*env)->GetArrayLength(env, data);
+            jbyte *dataPtr = (*env)->GetByteArrayElements(env, data, NULL);
+
+            cb(oidPtr, oidLen, dataPtr, dataLen, true, context);
+
+            (*env)->DeleteLocalRef(env, oid);
+            (*env)->DeleteLocalRef(env, data);
+        }
+
+        (*env)->DeleteLocalRef(env, crit);
+        (*env)->DeleteLocalRef(env, critIter);
+    }
+
     // Set<string> noncrit = cert.getNonCriticalExtensionOIDs();
-    return 0;
+    // Iterator<string> iter = collection.iterator();
+    // while (iter.hasNext()) {
+    //     string oid = iter.next();
+    //     byte[] data = cert.getExtensionValue(oid);
+    //     cb(oid, oid.length, data, data.length, /*critical*/ true);
+    // }
+    {
+        jobject noncrit = (*env)->CallObjectMethod(env, cert, g_X509CertGetNonCriticalExtensionOIDs);
+        jobject iter = (*env)->CallObjectMethod(env, noncrit, g_SetIterator);
+        jboolean hasNext = (*env)->CallBooleanMethod(env, iter, g_IteratorHasNext);
+        while (hasNext)
+        {
+            jstring oid = (*env)->CallObjectMethod(env, iter, g_IteratorNext);
+            jsize oidLen = (*env)->GetStringUTFLength(env, oid);
+            const char *oidPtr = (*env)->GetStringUTFChars(env, oid, NULL);
+
+            jbyteArray data = (*env)->CallObjectMethod(env, cert, g_X509CertGetExtensionValue, oid);
+            jsize dataLen = (*env)->GetArrayLength(env, data);
+            jbyte *dataPtr = (*env)->GetByteArrayElements(env, data, NULL);
+
+            cb(oidPtr, oidLen, dataPtr, dataLen, true, context);
+            hasNext = (*env)->CallBooleanMethod(env, iter, g_IteratorHasNext);
+
+            (*env)->DeleteLocalRef(env, oid);
+            (*env)->DeleteLocalRef(env, data);
+        }
+
+        (*env)->DeleteLocalRef(env, noncrit);
+        (*env)->DeleteLocalRef(env, iter);
+    }
+    
+    return SUCCESS;
 }
 
 int32_t AndroidCryptoNative_X509FindExtensionData(jobject /*X509Certificate*/ cert, const char *oid, uint8_t *buf, int32_t len)
