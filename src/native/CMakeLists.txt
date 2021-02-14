@@ -17,6 +17,7 @@ include_directories(
 
 set(SOURCES
     main.c
+    x509_test.h
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})

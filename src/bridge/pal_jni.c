@@ -12,6 +12,7 @@ jmethodID g_ByteArrayInputStreamCtor;
 
 // java/security/Key
 jclass    g_KeyClass;
+jmethodID g_KeyGetAlgorithm;
 jmethodID g_KeyGetEncoded;
 
 // java/security/SecureRandom
@@ -147,6 +148,10 @@ jmethodID g_KeyFactoryGenPublicMethod;
 jclass    g_X509EncodedKeySpecClass;
 jmethodID g_X509EncodedKeySpecCtor;
 
+// java/util/Date
+jclass    g_DateClass;
+jmethodID g_DateGetTime;
+
 // javax/security/auth/x500/X500Principal
 jclass    g_X500PrincipalClass;
 jmethodID g_X500PrincipalGetEncoded;
@@ -253,6 +258,7 @@ JNI_OnLoad(JavaVM *vm, void *reserved)
     g_ByteArrayInputStreamCtor =    GetMethod(env, false, g_ByteArrayInputStreamClass, "<init>", "([B)V");
 
     g_KeyClass =        GetClassGRef(env, "java/security/Key");
+    g_KeyGetAlgorithm = GetMethod(env, false, g_KeyClass, "getAlgorithm", "()Ljava/lang/String;");
     g_KeyGetEncoded =   GetMethod(env, false, g_KeyClass, "getEncoded", "()[B");
 
     g_randClass =               GetClassGRef(env, "java/security/SecureRandom");
@@ -362,8 +368,11 @@ JNI_OnLoad(JavaVM *vm, void *reserved)
     g_KeyFactoryGenPrivateMethod =     GetMethod(env, false, g_KeyFactoryClass, "generatePrivate", "(Ljava/security/spec/KeySpec;)Ljava/security/PrivateKey;");
     g_KeyFactoryGenPublicMethod =      GetMethod(env, false, g_KeyFactoryClass, "generatePublic", "(Ljava/security/spec/KeySpec;)Ljava/security/PublicKey;");
 
-    g_X509EncodedKeySpecClass =        GetClassGRef(env, "java/security/spec/X509EncodedKeySpec");
-    g_X509EncodedKeySpecCtor =         GetMethod(env, false, g_X509EncodedKeySpecClass, "<init>", "([B)V");
+    g_X509EncodedKeySpecClass       = GetClassGRef(env, "java/security/spec/X509EncodedKeySpec");
+    g_X509EncodedKeySpecCtor        = GetMethod(env, false, g_X509EncodedKeySpecClass, "<init>", "([B)V");
+
+    g_DateClass     = GetClassGRef(env, "java/util/Date");
+    g_DateGetTime   = GetMethod(env, false, g_DateClass, "getTime", "()J");
 
     g_X500PrincipalClass =      GetClassGRef(env, "javax/security/auth/x500/X500Principal");
     g_X500PrincipalGetEncoded = GetMethod(env, false, g_X500PrincipalClass, "getEncoded", "()[B");

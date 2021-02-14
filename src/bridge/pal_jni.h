@@ -21,6 +21,7 @@ extern jmethodID g_ByteArrayInputStreamCtor;
 
 // java/security/Key
 extern jclass    g_KeyClass;
+extern jmethodID g_KeyGetAlgorithm;
 extern jmethodID g_KeyGetEncoded;
 
 // java/security/SecureRandom
