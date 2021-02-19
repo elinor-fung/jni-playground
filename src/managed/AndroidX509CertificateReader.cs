@@ -1,6 +1,11 @@
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Formats.Asn1;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -10,6 +15,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace Internal.Cryptography.Pal
 {
+    // TODO: [AndroidCrypto] Rename class to AndroidX509CertificateReader
     internal sealed class OpenSslX509CertificateReader
     {
         private SafeX509Handle _cert;
@@ -18,15 +24,6 @@ namespace Internal.Cryptography.Pal
         private string? _subject;
         private string? _issuer;
 
-        public static OpenSslX509CertificateReader FromHandle(IntPtr handle)
-        {
-            if (handle == IntPtr.Zero)
-                throw new ArgumentException(nameof(handle));
-
-            return new OpenSslX509CertificateReader(Interop.Crypto.X509UpRef(handle));
-        }
-
-        // [TODO] Pkcs7, Pkcs12
         public static OpenSslX509CertificateReader FromBlob(ReadOnlySpan<byte> rawData)
         {
             OpenSslX509CertificateReader? cert;
@@ -45,11 +42,17 @@ namespace Internal.Cryptography.Pal
             throw new CryptographicException();
         }
 
+        public static OpenSslX509CertificateReader FromFile(string fileName)
+        {
+            byte[] fileBytes = System.IO.File.ReadAllBytes(fileName);
+            return FromBlob(fileBytes);
+        }
+
         // Handles both DER and PEM
         internal static bool TryReadX509(ReadOnlySpan<byte> rawData, [NotNullWhen(true)] out OpenSslX509CertificateReader? handle)
         {
             handle = null;
-            SafeX509Handle certHandle = Interop.Crypto.DecodeX509(
+            SafeX509Handle certHandle = Interop.AndroidCrypto.DecodeX509(
                 ref MemoryMarshal.GetReference(rawData),
                 rawData.Length);
 
@@ -63,20 +66,24 @@ namespace Internal.Cryptography.Pal
             return true;
         }
 
-        internal OpenSslX509CertificateReader(SafeX509Handle handle)
+        internal static bool TryReadX509Der(ReadOnlySpan<byte> rawData, [NotNullWhen(true)] out OpenSslX509CertificateReader? certPal)
+        {
+            return TryReadX509(rawData, out certPal);
+        }
+
+        internal static bool TryReadX509Pem(ReadOnlySpan<byte> rawData, [NotNullWhen(true)] out OpenSslX509CertificateReader? certPal)
+        {
+            return TryReadX509(rawData, out certPal);
+        }
+
+        private OpenSslX509CertificateReader(SafeX509Handle handle)
         {
             _cert = handle;
         }
 
-        public IntPtr Handle
-        {
-            get { return _cert == null ? IntPtr.Zero : _cert.DangerousGetHandle(); }
-        }
+        public IntPtr Handle => _cert == null ? IntPtr.Zero : _cert.DangerousGetHandle();
 
-        internal SafeX509Handle SafeHandle
-        {
-            get { return _cert; }
-        }
+        internal SafeX509Handle SafeHandle => _cert;
 
         public string Issuer
         {
@@ -87,7 +94,7 @@ namespace Internal.Cryptography.Pal
                     // IssuerName is mutable to callers in X509Certificate. We want to be
                     // able to get the issuer even if IssuerName has been mutated, so we
                     // don't use it here.
-                    _issuer = Interop.Crypto.LoadX500Name(Interop.Crypto.X509GetIssuerName(_cert)).Name;
+                    _issuer = Interop.AndroidCrypto.X509GetIssuerName(_cert).Name;
                 }
 
                 return _issuer;
@@ -103,7 +110,7 @@ namespace Internal.Cryptography.Pal
                     // SubjectName is mutable to callers in X509Certificate. We want to be
                     // able to get the subject even if SubjectName has been mutated, so we
                     // don't use it here.
-                    _subject = Interop.Crypto.LoadX500Name(Interop.Crypto.X509GetSubjectName(_cert)).Name;
+                    _subject = Interop.AndroidCrypto.X509GetSubjectName(_cert).Name;
                 }
 
                 return _subject;
@@ -114,60 +121,32 @@ namespace Internal.Cryptography.Pal
 
         public string LegacySubject => SubjectName.Decode(X500DistinguishedNameFlags.None);
 
-        public byte[] Thumbprint
-        {
-            get
-            {
-                return Interop.Crypto.GetX509Thumbprint(_cert);
-            }
-        }
+        public byte[] Thumbprint => Interop.AndroidCrypto.X509GetThumbprint(_cert);
 
-        public string KeyAlgorithm
-        {
-            get
-            {
-                // Length - 1 for null terminator included in byte array.
-                return new Oid(Interop.Crypto.GetX509PublicKeyAlgorithm(_cert)).FriendlyName;
-            }
-        }
+        public string KeyAlgorithm => new Oid(Interop.AndroidCrypto.X509GetPublicKeyAlgorithm(_cert)).Value!;
 
-        public byte[] KeyAlgorithmParameters
-        {
-            get
-            {
-                return Interop.Crypto.GetX509PublicKeyParameterBytes(_cert);
-            }
-        }
+        public byte[] KeyAlgorithmParameters => Interop.AndroidCrypto.X509GetPublicKeyParameterBytes(_cert);
 
         public byte[] PublicKeyValue
         {
             get
             {
-                return Interop.Crypto.GetX509PublicKeyBytes(_cert);
+                // AndroidCrypto returns the SubjectPublicKeyInfo - extract just the SubjectPublicKey
+                byte[] bytes = Interop.AndroidCrypto.X509GetPublicKeyBytes(_cert);
+                //return SubjectPublicKeyInfoAsn.Decode(bytes, AsnEncodingRules.DER).SubjectPublicKey.ToArray();
+                return bytes;
             }
         }
 
-        public byte[] SerialNumber
-        {
-            get
-            {
-                return Interop.Crypto.X509GetSerialNumber(_cert);
-            }
-        }
+        public byte[] SerialNumber => Interop.AndroidCrypto.X509GetSerialNumber(_cert);
 
-        public string SignatureAlgorithm
-        {
-            get
-            {
-                return Interop.Crypto.GetX509SignatureAlgorithm(_cert);
-            }
-        }
+        public string SignatureAlgorithm => Interop.AndroidCrypto.X509GetSignatureAlgorithm(_cert);
 
         public DateTime NotAfter
         {
             get
             {
-                ulong msFromUnixEpoch = Interop.Crypto.GetX509NotAfter(_cert);
+                ulong msFromUnixEpoch = Interop.AndroidCrypto.X509GetNotAfter(_cert);
                 return DateTime.UnixEpoch.AddMilliseconds(msFromUnixEpoch).ToLocalTime();
             }
         }
@@ -176,25 +155,18 @@ namespace Internal.Cryptography.Pal
         {
             get
             {
-                ulong msFromUnixEpoch = Interop.Crypto.GetX509NotBefore(_cert);
+                ulong msFromUnixEpoch = Interop.AndroidCrypto.X509GetNotBefore(_cert);
                 return DateTime.UnixEpoch.AddMilliseconds(msFromUnixEpoch).ToLocalTime();
             }
         }
 
-        public byte[] RawData
-        {
-            get
-            {
-                return Interop.Crypto.EncodeX509(_cert);
-            }
-        }
+        public byte[] RawData => Interop.AndroidCrypto.EncodeX509(_cert);
 
         public int Version
         {
             get
             {
-                int version = Interop.Crypto.GetX509Version(_cert);
-
+                int version = Interop.AndroidCrypto.X509GetVersion(_cert);
                 if (version < 0)
                 {
                     throw new CryptographicException();
@@ -210,7 +182,7 @@ namespace Internal.Cryptography.Pal
             {
                 if (_subjectName == null)
                 {
-                    _subjectName = Interop.Crypto.LoadX500Name(Interop.Crypto.X509GetSubjectName(_cert));
+                    _subjectName = Interop.AndroidCrypto.X509GetSubjectName(_cert);
                 }
 
                 return _subjectName;
@@ -223,7 +195,7 @@ namespace Internal.Cryptography.Pal
             {
                 if (_issuerName == null)
                 {
-                    _issuerName = Interop.Crypto.LoadX500Name(Interop.Crypto.X509GetIssuerName(_cert));
+                    _issuerName = Interop.AndroidCrypto.X509GetIssuerName(_cert);
                 }
 
                 return _issuerName;
@@ -235,27 +207,25 @@ namespace Internal.Cryptography.Pal
             public List<X509Extension> Results;
         }
 
-        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+        [UnmanagedCallersOnly]
         private static unsafe void EnumExtensionsCallback(byte* oid, int oidLen, byte* data, int dataLen, byte isCritical, void* context)
         {
             ref EnumExtensionsContext callbackContext = ref Unsafe.As<byte, EnumExtensionsContext>(ref *(byte*)context);
             string oidStr = Encoding.UTF8.GetString(oid, oidLen);
-            byte[] rawData = new ReadOnlySpan<byte>(data, dataLen).ToArray();
+            byte[] rawData = AsnDecoder.ReadOctetString(new ReadOnlySpan<byte>(data, dataLen), AsnEncodingRules.DER, out _);
             bool critical = isCritical != 0;
-
-            // The data array is the full DER-encoded data. X509Extension expects the data without the type and length, so skip the first two bytes.
-            callbackContext.Results.Add(new X509Extension(new Oid(oidStr), rawData[2..], critical));
+            callbackContext.Results.Add(new X509Extension(new Oid(oidStr), rawData, critical));
         }
 
         public IEnumerable<X509Extension> Extensions
         {
             get
             {
-                EnumExtensionsContext context;
+                EnumExtensionsContext context = default;
                 context.Results = new List<X509Extension>();
                 unsafe
                 {
-                    Interop.Crypto.X509EnumExtensions(_cert, &EnumExtensionsCallback, Unsafe.AsPointer(ref context));
+                    Interop.AndroidCrypto.X509EnumExtensions(_cert, &EnumExtensionsCallback, Unsafe.AsPointer(ref context));
                 }
 
                 return context.Results;
@@ -264,7 +234,7 @@ namespace Internal.Cryptography.Pal
 
         internal static ArraySegment<byte> FindFirstExtension(SafeX509Handle cert, string oidValue)
         {
-            return Interop.Crypto.X509FindExtensionData(cert, oidValue);
+            return Interop.AndroidCrypto.X509FindExtensionData(cert, oidValue);
         }
 
         public void Dispose()
@@ -274,13 +244,6 @@ namespace Internal.Cryptography.Pal
                 _cert.Dispose();
                 _cert = null!;
             }
-        }
-
-        internal OpenSslX509CertificateReader DuplicateHandles()
-        {
-            SafeX509Handle certHandle = Interop.Crypto.X509UpRef(_cert);
-            OpenSslX509CertificateReader duplicate = new OpenSslX509CertificateReader(certHandle);
-            return duplicate;
         }
     }
 }

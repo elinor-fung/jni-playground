@@ -184,6 +184,7 @@ extern jclass    g_NativeCryptoClass;
 #define LOG_DEBUG(fmt, ...) printf("DEBUG: " fmt "\n", __VA_ARGS__)
 #define LOG_INFO(fmt, ...) printf("INFO: " fmt "\n", __VA_ARGS__)
 #define LOG_ERROR(fmt, ...) printf("ERRROR: " fmt "\n -- in %s : %s@%d\n", __VA_ARGS__, __FUNCTION__, __FILE__, __LINE__)
+#define ON_EXCEPTION_PRINT_AND_GOTO(label) if (CheckJNIExceptions(env)) goto label
 
 void SaveTo(uint8_t* src, uint8_t** dst, size_t len);
 jobject ToGRef(JNIEnv *env, jobject lref);
